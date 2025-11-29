@@ -8,7 +8,8 @@ import { typeOrmConfig } from './config/database.config';
 @Module({
   imports: [
     ConfigModule.forRoot({isGlobal: true}),
-    TypeOrmModule.forRootAsync(typeOrmConfig)
+    TypeOrmModule.forRootAsync(typeOrmConfig),
+    
   ],
   controllers: [AppController],
   providers: [AppService],
