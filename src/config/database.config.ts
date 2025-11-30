@@ -12,7 +12,7 @@ export const typeOrmConfig: TypeOrmModuleAsyncOptions = {
     password: config.get('DB_PASS'),
     database: config.get('DB_NAME'),
 
-    autoLoadEntities: true,
+    autoLoadEntities: false,
     synchronize: false,
     entities: [__dirname + '/../entities/*.{ts,js}'],
     migrations: [__dirname + '/../../migrations/*.{ts,js}'],

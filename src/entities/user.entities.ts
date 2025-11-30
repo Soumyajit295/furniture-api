@@ -14,6 +14,9 @@ export class User {
   @Column()
   name: string;
 
+  @Column({nullable: true})
+  phone: string;
+
   @CreateDateColumn()
   created_at: Date;
 
