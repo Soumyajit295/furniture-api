@@ -10,6 +10,7 @@ import { UsersController } from './users/users.controller';
 import { UsersService } from './users/users.service';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { AuthModule } from './auth/auth.module';
     TypeOrmModule.forRootAsync(typeOrmConfig),
     UsersModule,
     AuthModule,
+    CategoriesModule,
     
   ],
   controllers: [AppController],
