@@ -68,4 +68,8 @@ export class CategoriesService {
             throw new ConflictException('Failed to delete category, Internal server error')
         }
     }
+
+    public async getCategoryById(id: number){
+        return await this.CategoriesRepository.findOne({where: {id}})
+    }
 }

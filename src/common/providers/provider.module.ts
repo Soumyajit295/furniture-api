@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { HashProvider } from "./hash.providers";
 import { TokenProvider } from "./token.providers";
+import { CloudinaryService } from "./cloudinary.provider";
 
 @Module({
     imports: [
@@ -12,7 +13,7 @@ import { TokenProvider } from "./token.providers";
             },
         })
     ],
-    providers: [HashProvider,TokenProvider],
-    exports: [HashProvider,TokenProvider]
+    providers: [HashProvider,TokenProvider,CloudinaryService],
+    exports: [HashProvider,TokenProvider,CloudinaryService]
 })
 export class ProvidersModule {}
