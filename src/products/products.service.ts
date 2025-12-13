@@ -7,6 +7,7 @@ import { CategoriesService } from 'src/categories/categories.service';
 import { CloudinaryService } from 'src/common/providers/cloudinary.provider';
 import { ProductImage } from 'src/entities/product-images.entities';
 import * as fs from "fs";
+import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
 export class ProductsService {
@@ -48,6 +49,7 @@ export class ProductsService {
             let product = this.ProductRepository.create({
                 ...createProductDto,
                 display_image: displayUpload.secure_url,
+                public_image_url: displayUpload.public_id
             });
 
             product = await this.ProductRepository.save(product);
@@ -68,6 +70,7 @@ export class ProductsService {
                     return this.ProductImageRepository.create({
                         productId: product.id,
                         image_url: upload.secure_url,
+                        public_url: upload.public_id,
                         is_primary: false,
                     });
                 });
@@ -91,6 +94,103 @@ export class ProductsService {
                     fs.unlinkSync(img.path);
                 }
             });
+        }
+    }
+
+    public async deleteProduct(productId: string){
+        const product = await this.ProductRepository.findOne({where: {id: productId}})
+        if(!product){
+            throw new BadRequestException('Product not found')
+        }
+        try{
+            await this.ProductRepository.delete(productId)
+            return{
+                message: 'Product deleted successfully'
+            }
+        }catch(err: any){
+            throw new ConflictException('Falied to delete product, Internal server error')
+        }
+    } 
+
+    public async updateProduct(
+        productId: string,
+        updateProductDto: UpdateProductDto,
+        displayImage: Express.Multer.File,
+        subImages: Express.Multer.File[]
+    ){
+        let product = await this.ProductRepository.findOne({where: {id: productId}})
+
+        if(!product){
+            throw new BadRequestException('Product Not found')
+        }
+
+        let {deleted_product,...updateData} = updateProductDto
+        Object.assign(product,updateData)
+
+        if (deleted_product && !Array.isArray(deleted_product)) {
+            deleted_product = [deleted_product];
+        }
+
+        // If user upload a new display image then delete the old one from DB and cloudinary and upload the new one and set the secure url and public_id
+
+        if(displayImage){
+            if(product.public_image_url){
+                await this.cloudinaryService.deleteImage(product.public_image_url)
+            }
+            const uploadedDisplayImage = await this.cloudinaryService.uploadImage(displayImage.path,"products/display")
+            if(!uploadedDisplayImage){
+                throw new ConflictException('Failed to upload the display image')
+            }
+            product.display_image = uploadedDisplayImage.secure_url
+            product.public_image_url = uploadedDisplayImage.public_id
+
+            fs.unlinkSync(displayImage.path)
+        }
+
+        // If we have something in the deleted_product array then loop through the array and remove from database and delete from cloudinary
+
+        // Deleted product except public_id of the image which is responsible to delete the image from cloudinary
+
+        if(deleted_product && deleted_product?.length > 0){
+            for(const image_id of deleted_product){
+                await this.ProductImageRepository.delete({public_url: image_id.toString()})
+                await this.cloudinaryService.deleteImage(image_id.toString())
+            }
+        }
+
+        let existingSubImagesForTheProduct = await this.ProductImageRepository.count({where: {productId: product.id}})
+
+        if(subImages && subImages.length > 0){
+            if(existingSubImagesForTheProduct + subImages.length > 5){
+                throw new BadRequestException('Prodcut should have maximum 5 sub images')
+            }
+            const imagePromise = subImages.map(async(image)=>{
+                const upload = await this.cloudinaryService.uploadImage(image.path,"products/sub")
+                return this.ProductImageRepository.create({
+                    productId: product.id,
+                    image_url: upload.secure_url,
+                    public_url: upload.public_id,
+                    is_primary: false,
+                })
+            })
+            const images = await Promise.all(imagePromise)
+            try{
+                await this.ProductImageRepository.save(images)
+            }catch(err: any){
+                throw new ConflictException('Failed to upload the subimages')
+            }
+            try{
+                await this.ProductRepository.save(product)
+                for(const img of subImages){
+                    fs.unlinkSync(img.path)
+                }
+                return{
+                    message: 'Product Updated Successfully',
+                    data: product
+                }
+            }catch(err: any){
+                throw new ConflictException('Failed to update product, Internal server error')
+            }
         }
     }
 }

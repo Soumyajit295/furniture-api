@@ -34,6 +34,9 @@ export class Product {
   @Column()
   display_image: string;
 
+  @Column()
+  public_image_url: string;
+
   @Column({
     type: "enum",
     enum: ProductStock

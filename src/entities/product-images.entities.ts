@@ -9,6 +9,9 @@ export class ProductImage {
   @Column()
   image_url: string;
 
+  @Column()
+  public_url: string;
+
   @Column({ nullable: true })
   alt_text: string;
 
