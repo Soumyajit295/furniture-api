@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Param, ParseIntPipe, ParseUUIDPipe, Patch, Post, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, DefaultValuePipe, Delete, Get, Param, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CreateProductDto } from './dto/create-product.dto';
 import { ProductsService } from './products.service';
@@ -65,5 +65,30 @@ export class ProductsController {
         }
     ){
       return await this.productService.updateProduct(productId,updateProductDto,file.display_image?.[0],file.sub_images || [])
+    }
+
+    @Get()
+    public async getProducts(
+      @Query('page') page = '1',
+      @Query('limit') limit = '10'
+    ){
+      return await this.productService.getProducts(page,limit)
+    }
+
+    @Get(":productId")
+    public async getProductDetails(
+      @Param('productId',new ParseUUIDPipe()) productId: string
+    ){
+      return await this.productService.getProductDetails(productId)
+    }
+
+    @Get('category/:categoryId')
+    public async getProductByCategory(
+      @Param('categoryId',ParseIntPipe) categoryId: number,
+      @Query('page',new DefaultValuePipe(1), ParseIntPipe) page: number,
+      @Query('limit',new DefaultValuePipe(10), ParseIntPipe) limit: number
+
+    ){
+      return await this.productService.getProductsByCategory(categoryId,page,limit)
     }
 }

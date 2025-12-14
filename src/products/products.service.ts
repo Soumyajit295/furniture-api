@@ -193,4 +193,61 @@ export class ProductsService {
             }
         }
     }
+
+    public async getProducts(page: string,limit: string){
+        const offset = (Number(page) - 1)*Number(limit)
+        if(offset < 0){
+            throw new BadRequestException('Offset should be positive')
+        }
+        const [data,total] = await this.ProductRepository.findAndCount({take: Number(limit),skip: offset})
+        return {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / Number(limit)),
+            data,
+        };
+    }
+
+    public async getProductDetails(productId: string){
+        try{
+            const product = await this.ProductRepository.findOne(
+                {
+                    where: {id: productId},
+                    relations: {images: true}
+                }        
+            )
+            return {
+                data: product
+            }
+        } catch(err: any){
+            throw new ConflictException('Failed to fetch product details')
+        }
+    }
+
+    public async getProductsByCategory(categoryId: number,page: number,limit: number){
+        try{
+            const offset = (page - 1)*limit
+            if(offset < 0){
+                throw new BadRequestException('Offset must of positive')
+            }
+            const [data,total] = await this.ProductRepository.findAndCount(
+                {
+                    take: page,
+                    skip: offset,
+                    where: {categoryId: categoryId.toString()}
+                }
+            )
+            return {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / Number(limit)),
+                data,
+            };
+
+        } catch(err: any){
+            throw new ConflictException('Failed to fetch products')
+        }
+    }
 }
